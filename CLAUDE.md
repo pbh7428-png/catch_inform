@@ -10,7 +10,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 시작할 때
 
-새 개발은 `../AX_Traning/skills/dev-kickoff/SKILL.md`의 절차를 따른다. 구현 전에 다음을 먼저 정리한다.
+개발은 Claude Code가 맡고 GPT(Codex CLI)가 검토한다. 사용자 전역 스킬(`~/.claude/skills/`) 세 개를 쓴다.
+
+- `dev-kickoff`: 새 프로젝트나 주요 기능을 시작할 때 문제 정의와 PRD/TRD를 정리한다.
+- `plan-review-gpt`: 완성한 계획 문서를 GPT에게 검토받는다.
+- `code-review-gpt`: 구현과 첫 테스트 뒤 코드 변경을 GPT에게 리뷰받는다.
+
+검토 결과는 `docs/reviews/`에 저장된다. `.agents/skills/`와 `tools/claude_plan_review.ps1`은 Codex가 개발하고 Claude가 검토하던 예전 구성이며 Claude Code에서는 쓰지 않는다.
+
+새 개발은 `dev-kickoff`의 절차를 따른다. 구현 전에 다음을 먼저 정리한다.
 
 - 문제 정의 → 데이터·API·권한 가능성 확인 → 간단한 PRD/TRD 순서로 진행한다. 작은 규모면 `docs/planning.md` 하나에 합친다.
 - 내용을 확정 / 가정 / 미정으로 구분하고, 목적·범위·핵심 구조가 달라지는 질문만 1~3개로 묶어 묻는다.
