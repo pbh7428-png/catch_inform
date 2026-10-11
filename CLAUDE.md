@@ -4,9 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 현재 상태
 
-주식 종목 정보를 수집하는 프로젝트를 시작하려는 저장소다. 지금은 커밋이 없는 빈 git 저장소(`master` 브랜치)이며 코드, 기술 스택, 빌드·테스트 명령이 아직 정해지지 않았다.
+보유 미국 주식 종목의 최근 24시간 뉴스에서 많이 보도된 이슈 2개씩을 골라 한국어 메일로 보내는 로컬 스크립트다. 요구사항과 설계는 `docs/planning.md`에 있다. Python 표준 라이브러리만 쓰며 설치할 것이 없다.
 
-스택과 구조가 정해지면 이 파일에 실행·테스트 명령과 데이터 흐름(수집 출처 → 저장 → 갱신)을 채운다.
+```powershell
+py daily_news.py --dry-run   # 수집·번역 후 output/YYYY-MM-DD.html만 만든다
+py daily_news.py             # 위에 더해 Gmail로 보낸다(.env 필요, .env.example 참고)
+py -m unittest               # 네트워크 없이 도는 테스트
+```
+
+데이터 흐름: `tickers.json` → `news_fetch.py`(Google 뉴스 RSS, 24시간 필터) → `issue_cluster.py`(관련성 판정, 제목 유사도로 묶기, 언론사 수로 순위) → `translate.py`(`claude -p`로 번역·요약) → `render.py`(HTML) → `send_mail.py`(Gmail SMTP). `daily_news.py`가 이 순서를 잇는다.
+
+`ticker_lookup.py`와 그 테스트는 리뷰 스킬을 시험하던 예제이며 위 흐름과 무관하다.
 
 ## 시작할 때
 
@@ -46,16 +54,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 자료 위치
 
-수집 출처와 저장 위치를 적는다. 아직 정해지지 않았다.
+- 수집 출처: Google 뉴스 RSS 검색(`news.google.com/rss/search`, 키 없음). 제목·언론사·링크·발행 시각만 온다. 조회수와 본문은 없다.
+- 종목 목록: `tickers.json`(git 제외). 사용자가 직접 고친다. 원격 저장소가 공개라서 보유 종목은 올리지 않고, 형식 예시만 `tickers.example.json`으로 올린다. 문서와 커밋 메시지에도 보유 종목을 적지 않는다.
+- 결과: `output/YYYY-MM-DD.html`(KST 날짜, git 제외). RSS 원자료는 저장하지 않는다.
+- 비밀 값: `.env`(git 제외). 값을 출력하거나 로그에 남기지 않는다.
 
 ## 결정 기록
 
 날짜, 결정, 이유를 한 줄씩 적는다. 리뷰에서 반려한 선택지와 새로 생긴 규칙도 여기에 남긴다.
 
 - 2026-10-10: 개발은 Claude Code, 검토는 GPT(Codex CLI)가 맡는다. 작업한 모델이 자기 결과를 채점하지 않게 하기 위해서다.
+- 2026-10-11: 뉴스 선정은 조회수가 아니라 같은 이슈를 실은 서로 다른 언론사 수로 한다. 조회수를 주는 출처가 없어서다. 화면에는 "N곳 보도"로 적는다.
+- 2026-10-11: 전달은 Gmail 발송이다. GitHub Pages(보유 종목 공개), 텔레그램, Tailscale은 사용자가 택하지 않았다.
+- 2026-10-11: 번역은 `claude -p --model haiku`로 한다(구독 사용, API 키 없음). API 키 방식으로 바꾸려면 비용이 생기므로 먼저 묻는다.
+- 2026-10-11: 제목 유사도 임계값 0.3. 바꿀 때는 NVDA·SPY·QQQ 실제 RSS로 묶음 결과를 다시 확인한다.
+- 2026-10-11: 이슈 묶기는 이어 묶기(단일 연결)를 유지한다. 평균 연결과 주변 기사 떼어내기는 실제 자료에서 더 나빴다(근거는 `docs/planning.md` 핵심 규칙).
+- 2026-10-11: `tickers.json`의 `keywords`에 `Apple` 같은 일반 단어를 넣지 않는다. 무관한 기사가 상위에 오른다.
+- 2026-10-11: 실행 위치는 이 PC다. GitHub Actions는 번역에 API 키와 비용이 들어 당분간 쓰지 않는다.
+- 2026-10-11: Windows 작업 스케줄러 작업 "보유종목 데일리 뉴스"가 매일 08:00(KST)에 `run_daily.cmd`를 실행한다. 실행 기록은 `output/run.log`에 쌓인다. 사용자가 로그인해 있을 때만 돌며, 놓친 실행은 PC가 켜지면 바로 돈다.
+- 2026-10-11: 비밀 값은 `.env`에만 둔다. `.env.example`은 git에 올라가는 파일이므로 값을 넣지 않는다.
+- 2026-10-11: Yahoo Finance RSS는 종목당 19건뿐이고 무관한 기사가 섞여 쓰지 않는다.
 
 ## 미검증 가정
 
 아직 확인하지 못한 내용이다. 여기 있는 것은 사실처럼 쓰지 않고, 확인하면 위 칸으로 옮기거나 지운다.
 
-- 데이터 출처, 이용 약관, 호출 한도, 인증 방식, 지연 시세 여부는 모두 확인 전이다.
+- Google 뉴스 RSS의 자동 수집 허용 범위와 호출 한도는 Google의 1차 문서로 확인하지 못했다. 개인용·하루 1회로만 쓰고 결과를 공개하거나 재배포하지 않는다.

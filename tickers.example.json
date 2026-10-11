@@ -1,0 +1,4 @@
+[
+  {"ticker": "SPY", "name": "S&P 500 ETF", "keywords": ["S&P 500"], "exclude": ["I SPY"]},
+  {"ticker": "QQQ", "name": "나스닥 100 ETF", "keywords": ["Nasdaq 100", "Nasdaq-100"]}
+]

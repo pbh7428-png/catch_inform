@@ -1,0 +1,4 @@
+.env
+tickers.json
+output/
+__pycache__/
